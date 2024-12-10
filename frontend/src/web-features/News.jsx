@@ -33,7 +33,7 @@ function News() {
         setNews(response.data.articles);
        
       } catch (error) {
-        console.error("News jsx error:", error);
+        console.error("News jsx error:");
       }
       setIsLoading(false);
     };
