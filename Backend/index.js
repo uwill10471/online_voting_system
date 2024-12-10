@@ -33,7 +33,7 @@ const __dirname = dirname(__filename);
 
 
 const corsOptions = {
-  origin:"http://localhost:5173",
+  origin:"https://ovs-gr0w.onrender.com",
   credntials:true
 }
 
