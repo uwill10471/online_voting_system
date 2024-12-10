@@ -1,0 +1,164 @@
+/* ChatWidget.css */
+.chat-widget {
+  position: fixed;
+  bottom: 80px;
+  right: 20px;
+  background-color: rgba(0, 0, 0, 0.8);
+  /* Less transparent */
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+  padding: 16px;
+  width: 90vw;
+  /* Responsive width */
+  max-width: 700px;
+  /* Max width */
+  height: 60vh;
+  /* Responsive height */
+  max-height: 400px;
+  /* Max height */
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: white;
+}
+
+.close-btn:hover {
+  color: #f00;
+}
+
+.chat-body {
+  background-color: black;
+  border-radius: 10px;
+  padding: 8px;
+  overflow-y: auto;
+  /* Make it scrollable */
+  flex-grow: 1;
+  margin-bottom: 10px;
+  max-height: calc(100% - 110px);
+  /* Ensure space for header and input */
+  padding-right: 15px;
+  /* Prevent scrollbar overlap */
+  display: flex;
+  /* Added for vertical stacking */
+  flex-direction: column;
+  /* Added for vertical stacking */
+}
+
+.message {
+  display: flex;
+  flex-direction: column;
+  /* Ensures messages stack vertically */
+  padding: 8px;
+  border-radius: 10px;
+  color: white;
+  max-width: 70%;
+  word-wrap: break-word;
+  /* Allows long words to wrap to the next line */
+  white-space: pre-wrap;
+  /* Ensures text wraps instead of staying on one line and respects line breaks */
+  overflow-wrap: break-word;
+  /* Handles long words better */
+  margin-bottom: 5px;
+  /* Adjusted margin bottom to reduce gap */
+}
+
+.user-message {
+  background-color: #007bff;
+  align-self: flex-end;
+}
+
+.bot-message {
+  background-color: black;
+  border: 1px solid white;
+  align-self: flex-start;
+}
+
+.chat-input {
+  display: flex;
+  justify-content: space-between;
+}
+
+.form-control {
+  flex: 1;
+  margin-right: 10px;
+  background-color: white;
+  color: black;
+}
+
+.btn-primary {
+  flex-shrink: 0;
+}
+
+/* Media query for smaller screens */
+@media (max-width: 600px) {
+  .chat-widget {
+    width: 100vw;
+    /* Full width */
+    height: 70vh;
+    /* Height adjustment */
+    bottom: 0;
+    /* Align to the bottom */
+    right: 0;
+    /* Align to the right */
+    border-radius: 0;
+    /* Remove border radius */
+  }
+}
+
+/* Media query for larger screens */
+@media (min-width: 992px) {
+  .chat-widget {
+    width: 60vw;
+    /* Larger width for laptops and desktops */
+    height: 70vh;
+    /* Larger height for laptops and desktops */
+    max-width: 1000px;
+    /* Max width for large screens */
+    max-height: 600px;
+    /* Max height for large screens */
+  }
+}
+
+/* Media query for extra-large screens */
+@media (min-width: 1200px) {
+  .chat-widget {
+    width: 50vw;
+    /* Larger width for extra-large screens */
+    height: 80vh;
+    /* Larger height for extra-large screens */
+    max-width: 1200px;
+    /* Max width for extra-large screens */
+    max-height: 800px;
+    /* Max height for extra-large screens */
+  }
+}
+
+/* ChatWidget.css */
+.form-control::-webkit-input-placeholder {
+  color: #888;
+  /* Light grey placeholder text color */
+}
+
+.form-control:-ms-input-placeholder {
+  color: #888;
+  /* Light grey placeholder text color */
+}
+
+.form-control::placeholder {
+  color: #888;
+  /* Light grey placeholder text color */
+}

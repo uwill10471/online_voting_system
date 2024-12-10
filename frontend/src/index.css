@@ -1,0 +1,90 @@
+/* index.css */
+
+@import 'bootstrap/dist/css/bootstrap.min.css';
+@import 'tailwindcss/tailwind.css';
+
+/* Your custom styles */
+/* index.css or a custom CSS file */
+/* index.css or a custom CSS file */
+.news-card {
+  border: none;
+  transition: transform 0.2s;
+}
+
+.news-card:hover {
+  transform: scale(1.02);
+}
+
+.news-card img {
+  height: 200px;
+  object-fit: cover;
+}
+
+.card-body {
+  padding: 16px;
+}
+
+.card-title {
+  font-size: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.card-text {
+  font-size: 1rem;
+  color: #6c757d;
+}
+
+.btn-primary {
+  background-color: #007bff;
+  border-color: #007bff;
+  color: white;
+}
+
+
+/* it was for newscard */
+
+/* index.css or a custom CSS file */
+/* You can use Tailwind CSS classes directly in the component */
+.navbar {
+  @apply bg-blue-500 text-white;
+}
+
+.nav-link {
+  @apply text-white hover:text-gray-300;
+}
+
+.btn-outline-danger {
+  @apply border-transparent text-white hover:text-red-500;
+}
+
+/* it was for navbar  */
+/* index.css or a custom CSS file */
+/* You can use Tailwind CSS classes directly in the component */
+.container {
+  @apply flex justify-center items-center min-h-screen;
+}
+.card { @apply shadow-lg rounded-lg; }
+.form-control {
+  @apply border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50;
+}
+
+.btn-primary {
+  @apply bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded;
+}
+
+/* it was for login,register and userpage */
+
+.bg-light { @apply bg-gray-100; } 
+
+.text-primary { @apply text-blue-600; } 
+.text-muted { @apply text-gray-600; } 
+
+
+
+.btn-outline-primary { @apply border border-red-600 text-blue-600 hover:bg-blue-600 hover:text-white font-bold py-2 px-4 rounded; } 
+
+.btn-secondary { @apply bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded; } 
+
+.list-group-item { @apply bg-white border border-gray-300; } .mt-auto { @apply mt-auto;}
+
+/* it was for homepage */

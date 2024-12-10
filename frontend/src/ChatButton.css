@@ -1,0 +1,11 @@
+/* ChatButton.css */
+.btn-light {
+  background-color: #fff;
+  color: #000;
+  border: 1px solid #ccc;
+}
+
+.btn-light:hover {
+  background-color: #f8f9fa;
+  color: #000;
+}
