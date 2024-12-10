@@ -21,9 +21,7 @@ function News() {
   }, [isLoggedIn, navigate]);
 
   useEffect(() => {
-    const apiKey = import.meta.env.VITE_NEWS_API_KEY;
-    const apiUrl = import.meta.env.VITE_NEWS_API_URL;
-   const url = `${apiUrl}/everything?q=indian+election&sortBy=publishedAt&apiKey=${apiKey}`; 
+    
    const options = { headers: { 'User-Agent': 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36 Edg/131.0.0.0',
     'Upgrade': 'h2c' // HTTP/2 over cleartext TCP
     } };
@@ -31,11 +29,12 @@ function News() {
     const getNews = async () => {
       setIsLoading(true);
       try {
-        const response = await axios.get(url,options);
+        const response = await axios.get('/api/news');
+        console.log(response.data)
         setNews(response.data.articles);
        
       } catch (error) {
-        console.error("News jsx error:");
+        console.error("News jsx error:",error.message);
       }
       setIsLoading(false);
     };

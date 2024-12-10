@@ -20,7 +20,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import adminRegister from './src/Route/AdminRegister.js'
 import adminLogin from './src/Route/AdminLogin.js'
 import votingRoute from './src/Route/Vote.js'
-
+import newsRoute from './src/Route/News.js'
 import { fileURLToPath } from 'url'; 
 import { dirname, join, resolve } from 'path'
 // import multer from 'multer';
@@ -33,7 +33,7 @@ const __dirname = dirname(__filename);
 
 
 const corsOptions = {
-  origin:"https://ovs-gr0w.onrender.com",
+  origin:"https://ovs-gr0w.onrender.com", //https://ovs-gr0w.onrender.com
   credntials:true
 }
 
@@ -95,7 +95,7 @@ passport.deserializeUser(User.deserializeUser());
 app.use( adminRegister); 
 app.use( adminLogin);
 app.use('/api/vote', votingRoute)
-
+app.use('/api/news',newsRoute)
 app.post('/api/register', (req, res) => {
     
 
