@@ -24,7 +24,9 @@ function News() {
     const apiKey = import.meta.env.VITE_NEWS_API_KEY;
     const apiUrl = import.meta.env.VITE_NEWS_API_URL;
    const url = `${apiUrl}/everything?q=indian+election&sortBy=publishedAt&apiKey=${apiKey}`; 
-   const options = { headers: { 'User-Agent': 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36 Edg/131.0.0.0' } };
+   const options = { headers: { 'User-Agent': 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36 Edg/131.0.0.0',
+    'Upgrade': 'h2c' // HTTP/2 over cleartext TCP
+    } };
     
     const getNews = async () => {
       setIsLoading(true);
