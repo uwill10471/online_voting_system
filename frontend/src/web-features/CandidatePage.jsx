@@ -18,8 +18,8 @@ function CandidatePage() {
     const reduxUsername = useSelector(state => state.username.username)
     const navigate = useNavigate()
     const isLoggedIn = useSelector(state => state.login.isLoggedIn)
-
-
+    const partyOptions = ["BJP","INC","SP","AAP","TMC","Shiv Sena","YSR Congress","AIADMK","DMK","Not Specified"]
+    const [tempParty,setTempParty] = useState("")
     const handleFileChange = (e) => {
         setPhoto(e.target.files[0]);
     };
@@ -30,7 +30,7 @@ function CandidatePage() {
 
         const formData = new FormData();
         formData.append('username', username);
-        formData.append('party', party);
+        formData.append('party', party!="Not Specified"?party : tempParty);
         formData.append('candidateName', candidateName);
         formData.append('voterID', voterID);
         formData.append('gender', gender);
@@ -69,6 +69,8 @@ function CandidatePage() {
    }
    },[isLoggedIn,navigate])
 
+  
+
     return (
         <div className="container mx-auto mt-5 p-5">
             <h2 className="text-2xl font-bold mb-5">Register as Candidate</h2>
@@ -84,17 +86,42 @@ function CandidatePage() {
                         required
                     />
                 </div>
+
                 <div className="form-group">
                     <label htmlFor="party" className="form-label">Party</label>
+                    <select 
+                    name="party" 
+                    id="party"
+                    value={party}
+                    onChange={(e)=>setParty(e.target.value)}
+                    className='form-control'
+                    >
+                        <option value="">Select Party</option>
+                        {
+                            partyOptions.map((partyName,index)=>(
+                            <option value={partyName} key={index}>{partyName}</option>
+                            ))
+                        }
+                        
+
+
+                    </select>
+                </div>
+
+                {/* if party is not specified */}
+                {party==="Not Specified" &&  <div className="form-group">
+                    <label htmlFor="party" className="form-label">Specify Your Party</label>
                     <input 
                         type="text" 
-                        id="party" 
-                        value={party} 
-                        onChange={(e) => setParty(e.target.value)} 
+                        id="partyNS" 
+                        value={tempParty} 
+                        onChange={(e) => setTempParty(e.target.value)} 
                         className="form-control"
-                        required
+                    
                     />
-                </div>
+                </div> }
+
+
                 <div className="form-group">
                     <label htmlFor="candidateName" className="form-label">Candidate Name</label>
                     <input 

@@ -6,10 +6,7 @@ import passport from 'passport';
 import LocalStrategy from 'passport-local';
 import session from 'express-session';
 import cors from 'cors'
-import RegisteredUser from './src/models/RegisteredUser.js';
-import Candidate from './src/models/CandidateSchema.js';
-import Admin from './src/models/AdminSchema.js'
-import User from './src/models/UserSchema.js'
+
 import { v4 as uuidv4 } from 'uuid';
 // import { GridFSBucket } from 'mongodb'; //for image bucket
 import { v2 as cloudinary } from "cloudinary"
@@ -23,6 +20,18 @@ import votingRoute from './src/Route/Vote.js'
 import newsRoute from './src/Route/News.js'
 import { fileURLToPath } from 'url'; 
 import { dirname, join, resolve } from 'path'
+import { containerBootstrap } from '@nlpjs/core';
+import { Nlp } from '@nlpjs/nlp';
+import { LangEn } from '@nlpjs/lang-en-min';
+//models
+import Block from './src/models/Block.js';
+import Transaction from './src/models/Transaction.js';
+import RegisteredUser from './src/models/RegisteredUser.js';
+import Candidate from './src/models/CandidateSchema.js';
+import Admin from './src/models/AdminSchema.js'
+import User from './src/models/UserSchema.js'
+
+
 // import multer from 'multer';
 dotenv.config()
 const app = express();
@@ -30,6 +39,9 @@ const PORT = process.env.PORT || 3000
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+let nlp;
+
 
 
 const corsOptions = {
@@ -153,11 +165,11 @@ app.post('/api/login', passport.authenticate('local'), (req, res) => {
 //RegistertoVote
 
 app.post("/api/registertovote", async (req, res) => {
-  const { username, FullName, Age, DOB, PhoneNo, AadharNo, VoterID } = req.body;
+  const { username, FullName, Age, DOB, PhoneNo, AadharNo, VoterID,gender } = req.body;
 
   try {
     // Check for missing fields
-    if (!username || !FullName || !Age || !DOB || !PhoneNo || !AadharNo || !VoterID) {
+    if (!username || !FullName || !Age || !DOB || !PhoneNo || !AadharNo || !VoterID || !gender) {
       return res.status(400).json({ message: "Please fill all the required details." });
     }
 
@@ -195,6 +207,7 @@ app.post("/api/registertovote", async (req, res) => {
       PhoneNo,
       AadharNo,
       VoterID,
+      gender,
       uniqueKey,
       hasVoted: false
     });
@@ -328,20 +341,20 @@ await Candidate.updateOne({_id : id},{isSelected: true})
     }
 });
 
-app.post("/api/chat", async (req, res) => {
-  const { prompt } = req.body;
-  try {
-    // Add specific instructions to the prompt for a detailed markdown response
-    const enhancedPrompt = `${prompt}\n\nPlease provide a detailed response only on Election and if the propmt question is about something else reply with "keep this chat for election related topic only" formatted in Markdown, including headings, bullet points, new line for subheading and heading and links where applicable.`;
+// app.post("/api/chat", async (req, res) => {
+//   const { prompt } = req.body;
+//   try {
+//     // Add specific instructions to the prompt for a detailed markdown response
+//     const enhancedPrompt = `${prompt}\n\nPlease provide a detailed response only on Election and if the propmt question is about something else reply with "keep this chat for election related topic only" formatted in Markdown, including headings, bullet points, new line for subheading and heading and links where applicable.`;
 
-    const result = await model.generateContent(enhancedPrompt);
-   // console.log("Response =", result.response.text());
-    res.status(200).json(result.response.text());
-  } catch (error) {
-    console.error("Error Generating Content in /chat :: post", error);
-    res.status(500).json({ error: "Error generating content" });
-  }
-});
+//     const result = await model.generateContent(enhancedPrompt);
+//    // console.log("Response =", result.response.text());
+//     res.status(200).json(result.response.text());
+//   } catch (error) {
+//     console.error("Error Generating Content in /chat :: post", error);
+//     res.status(500).json({ error: "Error generating content" });
+//   }
+// });
 
 
 // session route 
@@ -364,6 +377,392 @@ app.get('/api/logout', function(req, res, next) {
   });
 });
 
+  const voteCasted = await Block.countDocuments() -1;
+  const allVotes = await Transaction.find({}).exec();
+  let MaincountIndividualVotes = {};
+  let MaincandidateDetail = [];
+
+  const resultNLP  = async ()=>{
+    let countIndividualVotes = {};
+    let candidateDetail = [];
+  for (const vote of allVotes) {
+        // Storing candidates vote count
+        const candidateId = vote.candidateId;
+        if (countIndividualVotes[candidateId]) {
+            countIndividualVotes[candidateId]++;
+        } else {
+            countIndividualVotes[candidateId] = 1;
+            // Fetching candidate details and storing it in an array
+            const TempCandidate = await Candidate.findOne({ _id: candidateId });
+            
+            if (TempCandidate) {
+                candidateDetail.push({
+                    candidateId: candidateId,
+                    candidateName: TempCandidate.candidateName,
+                    gender: TempCandidate.gender,
+                    party: TempCandidate.party
+                });
+            } else {
+                console.warn(`Candidate not found for candidateId: ${candidateId}`);
+            }
+        }
+    }
+    MaincandidateDetail = candidateDetail;
+    MaincountIndividualVotes = countIndividualVotes;
+  }
+ 
+  let MregisteredUserVotedInfo = []
+  let totalRegisteredToVote = await RegisteredUser.countDocuments() // not used in electionNLP function 
+  let totalMaleRegisteredToVote = await RegisteredUser.countDocuments({gender:"male"}) // not used in electionNLP function 
+  let totalFemaleRegisteredToVote = await RegisteredUser.countDocuments({gender:"female"})// not used in electionNLP function 
+  let totalOthersRegisteredToVote = await RegisteredUser.countDocuments({gender:"others"}) // not used in electionNLP function  
+  //upper var used in demographics 
+  let MtotalMaleVoted =0;
+  let MtotalFemaleVoted = 0; //M = MAin
+  let MtotalOthersVoted =0;
+  let MmaleVotedCandidates = {} //males ne kis kis candidate ko kitna vote diya
+  let MfemaleVotedCandidates = {}//females ne kis kis candidate ko kitna vote diya
+  let MotherVotedCandidates ={}//others ne kis kis candidate ko kitna vote diya
+  
+
+  const electionNLP = async ()=>{
+   let registeredUserVotedInfo =[]
+  let totalMaleVoted =0;
+  let totalFemaleVoted = 0;
+  let totalOthersVoted =0;
+  let maleVotedCandidates = {} //males ne kis kis candidate ko kitna vote diya
+  let femaleVotedCandidates = {}//females ne kis kis candidate ko kitna vote diya
+  let otherVotedCandidates ={}//others ne kis kis candidate ko kitna vote diya
+
+     for (const userinfo of allVotes){
+     const info = await RegisteredUser.findOne({
+      username:userinfo.voterUsername,
+      hasVoted: true
+    })
+   const candidateId = userinfo.candidateId;
+    //if userinfo is in transaction that means user has voted , so if hasVoted is false for that user , update it 
+    if(!info){
+      info = await RegisteredUser.findOneAndUpdate(
+        {username:userinfo.voterUsername},
+      {$set:{hasVoted:true}},
+      {new:true}) //gives updated solution
+    }
+
+    registeredUserVotedInfo.push(info);
+    console.log(info);
+    
+    // checking how many male and females and others have voted in election
+    if(info.gender==="male"){
+      totalMaleVoted++;
+      //storing the candidates male no of votes
+      if(maleVotedCandidates[candidateId]){
+        maleVotedCandidates[candidateId]++;
+      }else{
+        maleVotedCandidates[candidateId] =1;
+      }
+    }else if(info.gender==="female"){
+      totalFemaleVoted++;
+      //storing the candidates female no of votes
+       if(femaleVotedCandidates[candidateId]){
+        femaleVotedCandidates[candidateId]++;
+      }else{
+        femaleVotedCandidates[candidateId] =1;
+      }
+    }else{
+      totalOthersVoted++
+      //storing the candidates other gender no of votes
+       if(otherVotedCandidates[candidateId]){
+        otherVotedCandidates[candidateId]++;
+      }else{
+         otherVotedCandidates[candidateId] =1;
+      }
+    }
+    
+     }
+MregisteredUserVotedInfo = registeredUserVotedInfo
+  MtotalMaleVoted   =totalMaleVoted 
+  MtotalFemaleVoted =totalFemaleVoted 
+  MtotalOthersVoted =totalOthersVoted 
+  MmaleVotedCandidates = maleVotedCandidates 
+  MfemaleVotedCandidates= femaleVotedCandidates 
+  MotherVotedCandidates =otherVotedCandidates 
+  }
+
+app.post('/api/chat', async (req, res) => {
+    const { prompt } = req.body;
+    const response = await nlp.process('en', prompt);
+    console.log(response.answer);
+    const answer = response.answer;
+    
+    if(answer== undefined|| answer == null || answer=== ""){
+      const updatedPrompt = `${prompt}\n\nPlease provide a detailed response only on Election and if the propmt question is about something else reply with "keep this chat for election related topic only" formatted in Markdown, including headings, bullet points, new line for subheading and heading and links where applicable.`;
+      try{
+          const result = await model.generateContent(updatedPrompt);
+   // console.log("Response =", result.response.text());
+    res.status(200).json(result.response.text());
+      }catch(error){
+         res.status(500).json({ error: "Error generating content" });
+      }
+   
+    } // up till here if no match in NLP generate normal response
+    else if(answer==='demographics'){
+      try { //how many man and women voted
+        await electionNLP();
+        const updatedPrompt = `# Election Report
+
+## Registered Voters
+- **Total Registered Voters**: ${totalRegisteredToVote}
+- **Total Male Registered Voters**: ${totalMaleRegisteredToVote}
+- **Total Female Registered Voters**: ${totalFemaleRegisteredToVote}
+- **Total Other Registered Voters**: ${totalOthersRegisteredToVote}
+
+## Votes Cast by Gender
+- **Total Male Votes Cast**: ${MtotalMaleVoted}
+- **Total Female Votes Cast**: ${MtotalFemaleVoted}
+- **Total Other Votes Cast**: ${MtotalOthersVoted}
+
+Based on the above information, please provide a summary of the registered voters and votes cast by gender in Markdown format, including headings, bullet points, and any additional insights you find relevant.`
+
+console.log(updatedPrompt);
+
+const result = await model.generateContent(updatedPrompt);
+res.status(200).json(result.response.text());
+}catch(error){
+  console.error("Error in gemini", error);
+    res.status(500).json({ error: "Error generating content" });
+}
+
+        
+    }else if(answer==='election'){
+      console.log("here");
+      
+      try{
+
+      await electionNLP();
+      await resultNLP();
+
+      
+// Create a detailed prompt
+const updatedPrompt = `
+# Election Results Summary
+** Make sure to not mention any sensitive detail of user and dont mention any ID of either candidate or user for candidate you can use their name **
+**Total Votes Cast**: **${voteCasted}**
+
+## Votes Per Candidate
+${Object.entries(MaincountIndividualVotes).map(([id, count]) => `- **Candidate ID**: \`${id}\` received **${count}** votes`).join('\n')}
+
+## Candidate Details
+${MaincandidateDetail.map(candidate => `
+- **Candidate ID**: \`${candidate.candidateId}\`
+  - **Name**: ${candidate.candidateName}
+  - **Gender**: ${candidate.gender}
+  - **Party**: ${candidate.party}
+`).join('\n')}
+
+## Voter Demographics
+### Total Votes by Gender
+- **Male Voters**: ${MtotalMaleVoted}
+- **Female Voters**: ${MtotalFemaleVoted}
+- **Other Voters**: ${MtotalOthersVoted}
+
+### Votes Per Candidate by Gender
+#### Male Voters
+${Object.entries(MmaleVotedCandidates).map(([id, count]) => `- **Candidate ID**: \`${id}\` received **${count}** votes from male voters`).join('\n')}
+
+#### Female Voters
+${Object.entries(MfemaleVotedCandidates).map(([id, count]) => `- **Candidate ID**: \`${id}\` received **${count}** votes from female voters`).join('\n')}
+
+#### Other Voters
+${Object.entries(MotherVotedCandidates).map(([id, count]) => `- **Candidate ID**: \`${id}\` received **${count}** votes from other voters`).join('\n')}
+
+Based on the above information , please provide a summary and detailed report of the election results in Markdown format, including headings, bullet points, and tables where applicable.
+`;
+
+console.log(updatedPrompt);
+
+const result = await model.generateContent(updatedPrompt);
+res.status(200).json(result.response.text());
+
+
+
+
+
+      }catch(error){
+      console.error("Error in gemini", error);
+    res.status(500).json({ error: "Error generating content" });
+      }
+
+
+    }else if(answer==='results'){
+    try {
+  
+  
+    await resultNLP();
+  
+    console.log("Total votes:", voteCasted);
+    console.log("Individual votes count:", MaincountIndividualVotes);
+    console.debug("Candidate details:", MaincandidateDetail);
+
+    const updatedPrompt = `
+# Election Results Summary
+
+**Total Votes Cast**: **${voteCasted}**
+
+## Votes Per Candidate
+${Object.entries(MaincountIndividualVotes).map(([id, count]) => `- **Candidate ID**: \`${id}\` received **${count}** votes`).join('\n')}
+
+## Candidate Details
+${MaincandidateDetail.map(candidate => `
+- **Candidate ID**: \`${candidate.candidateId}\`
+  - **Name**: ${candidate.candidateName}
+  - **Gender**: ${candidate.gender}
+  - **Party**: ${candidate.party}
+`).join('\n')}
+
+Based on the above information, please provide a summary of the election results in Markdown format, including headings and bullet points.
+`;
+
+    console.log(updatedPrompt);
+
+    const result = await model.generateContent(updatedPrompt);
+    res.status(200).json(result.response.text());
+} catch (error) {
+    console.error("Error in gemini", error);
+    res.status(500).json({ error: "Error generating content" });
+}
+
+
+
+      // 
+
+       
+
+    }
+});
+
+const initializeNlp = async () => {
+    const container = await containerBootstrap();
+    container.use(Nlp);
+    container.use(LangEn);
+    nlp = container.get('nlp');
+    nlp.settings.autoSave = false;
+    nlp.settings.threshold = 0.7;
+    nlp.addLanguage('en');
+
+    // Adds the utterances and intents for the NLP
+    const addDocuments = () => {
+        // Election report queries
+        const reportDocuments = [
+            'generate a report on election queries',
+            'I want a report on the elections',
+            'Please create an election report',
+            'Can you generate a report on the elections?',
+            'Make an election report',
+            'Give me a report on the election queries',
+            'Report the election queries',
+            'Prepare an election query report',
+            'Generate an analysis on the election queries',
+            'I need an election query report',
+            // Additional variations up to 50
+            'Can you prepare a summary of election queries?', 
+            'Make a detailed report on election topics', 
+            'Produce a report about election queries', 
+            'Create a document on election issues', 
+            'Summarize the election queries in a report', 
+            'I need a detailed report on the elections', 
+            'Provide a report on election questions', 
+            'Compile a report about election matters', 
+            'Draft a report on election-related queries', 
+            'Generate an election inquiry report', 
+            'I require a report on the election results', 
+            'Can you make a report on election inquiries?', 
+            'Put together a report on election topics', 
+            'Create a detailed election report', 
+            'Write a report on the election-related questions', 
+            'Can you generate a summary report on elections?', 
+            'I need a comprehensive election report', 
+            'Provide me with a report on the election queries', 
+            'Formulate a report on election topics', 
+            'Generate a thorough report on election queries', 
+            'Create a report regarding election matters', 
+            'Can you compile an election queries report?', 
+            'Produce an election-related report', 
+            'Summarize election queries into a report', 
+            'Make a report on election subjects', 
+            'I need an election report summary', 
+            'Give me a full report on the elections', 
+            'Generate a detailed summary of election queries', 
+            'Report on election topics for me', 
+            'Create a comprehensive election-related report', 
+            'Draft an election query summary report', 
+            'Produce a detailed document on election queries', 
+            'Can you write a report about elections?', 
+            'Compile all election-related queries in a report', 
+            'Prepare a detailed election analysis report', 
+            'Provide a full report on election topics', 
+            'Summarize the election-related questions in a report'
+        ];
+
+        // Voter demographics queries
+        const demographicsDocuments = [
+            'tell me how many men voted',
+            'how many women participated in the election',
+            'what is the male voter turnout',
+            'how many female voters were there',
+            'can you give me the number of male voters',
+            'provide statistics on female voters',
+            'how many men voted in the election',
+            'tell me the number of female participants',
+            'give me the gender distribution of voters',
+            'how many male voters were there',
+            'No of male voters who voted',
+            'how many male voted',
+            'how many female voted',
+            'No. of female voters',
+            'No. of male voters',
+            'how many men voted',
+            'how many female voted',
+            'men who showed up for election',
+            'female who showed up for election',
+            'numbers of men who showed up for election',
+            'numbers of female who showed up for voting'
+        ];
+
+        // Election results queries
+        const resultsDocuments = [
+            'what are the election results so far',
+            'tell me the current election results',
+            'what is the result of the election so far',
+            'can you provide the latest election results',
+            'what’s the status of the election results',
+            'give me an update on the election results',
+            'how are the election results looking',
+            'tell me the current standings in the election',
+            'provide the latest results of the election',
+            'what are the preliminary election results',
+        ];
+
+        reportDocuments.forEach(doc => nlp.addDocument('en', doc, 'report.election'));
+        demographicsDocuments.forEach(doc => nlp.addDocument('en', doc, 'report.demographics'));
+        resultsDocuments.forEach(doc => nlp.addDocument('en', doc, 'report.results'));
+
+        nlp.addAnswer('en', 'report.election', 'election');
+        nlp.addAnswer('en', 'report.demographics', 'demographics');
+        nlp.addAnswer('en', 'report.results', 'results');
+    };
+
+    addDocuments();
+    await nlp.train();
+    console.log('NLP model trained and ready.');
+};
+
+initializeNlp();
+
+
+
+
+
+
 
 app.use(express.static(resolve(__dirname, "../frontend/dist"))); 
 app.get('*', (req, res) => { 
@@ -371,10 +770,13 @@ app.get('*', (req, res) => {
   res.sendFile(resolve(__dirname, "../frontend/dist", "index.html")); 
 
 });
-app.listen(PORT, () => {
-    //console.log(`Server is running on port 3000 visit http://localhost:${PORT}`);
-});
 
+
+
+
+    app.listen(PORT, () => {
+        console.log(`NLP app listening at http://localhost:${PORT}`);
+    });
 
 //ELECTION - REACT FRONTEND FOLDER
 //BACKEND - NODEJS BACKEND FOLDER

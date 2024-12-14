@@ -18,6 +18,7 @@ const User = () => {
   const [AadharNo, setAadharNo] = useState("");
   const [VoterID, setVoterID] = useState("");
   const [message, setMessage] = useState("");
+  const [gender,setGender] = useState("");
   
   useEffect(() => {
     setIsLoading(true);
@@ -43,7 +44,7 @@ const User = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post("/api/registertovote", { username, FullName, Age, DOB, PhoneNo, AadharNo, VoterID });
+      const response = await axios.post("/api/registertovote", { username, FullName, Age, DOB, PhoneNo, AadharNo, VoterID,gender });
 
       if (response.data.success) {
         setMessage(response.data.message);
@@ -103,6 +104,23 @@ const User = () => {
                 min="0" 
                 required 
               />
+            </div>
+            <div className='mb-3'>
+              <label htmlFor="gender" className='form-label'>Gender</label>
+              <select 
+              name="gender" 
+              id="gender"
+              value={gender}
+              onChange={(e)=> setGender(e.target.value)}
+              className="form-control"
+              required
+              >
+                <option value="">Select Gender</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+                <option value="other">Other</option>
+              </select>
+
             </div>
             <div className="mb-3">
               <label htmlFor="dob" className="form-label">Date of Birth:</label>

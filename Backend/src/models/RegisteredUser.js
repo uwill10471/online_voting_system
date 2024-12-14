@@ -38,6 +38,11 @@ const RegisteredUserSchema = new mongoose.Schema({
     required: true,
     unique: true, // Ensures no duplicate Voter IDs
   },
+  gender:{
+    type: String,
+    required: true
+
+  },
   uniqueKey: {
     type: String,
     required: true,
