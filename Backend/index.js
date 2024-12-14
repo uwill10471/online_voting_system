@@ -45,7 +45,7 @@ let nlp;
 
 
 const corsOptions = {
-  origin:"http://localhost:3000", //https://ovs-gr0w.onrender.com
+  origin:"https://ovs-gr0w.onrender.com", //https://ovs-gr0w.onrender.com
   credntials:true
 }
 
